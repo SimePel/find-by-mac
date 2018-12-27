@@ -35,7 +35,9 @@ func main() {
 
 	inter := getInterfaceByMac(clientConfig, "10.1.0.29:22", "b79e")
 	desc := getDescriptionOfInterface(clientConfig, "10.1.0.29:22", inter)
-	fmt.Println(checkIfDescriptionIsASwitch(desc))
+	if checkIfDescriptionIsASwitch(desc) {
+		fmt.Println(changeSwitchDescToAppropriateName(desc))
+	}
 }
 
 func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) string {
@@ -88,4 +90,10 @@ func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
 
 func checkIfDescriptionIsASwitch(desc string) bool {
 	return strings.HasPrefix(desc, "sw-")
+}
+
+func changeSwitchDescToAppropriateName(desc string) string {
+	beginning := strings.Index(desc, "sw-")
+	ending := strings.LastIndex(desc, "c")
+	return desc[beginning:ending+1] + ".noc.asu.ru"
 }
