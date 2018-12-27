@@ -58,7 +58,8 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 
 	slices := strings.Fields(string(b))
 	if len(slices) != 4 {
-		log.Fatalln("description is empty")
+		log.Println("description is empty")
+		return ""
 	}
 
 	return strings.Fields(string(b))[3]
