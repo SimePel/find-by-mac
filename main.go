@@ -33,8 +33,35 @@ func main() {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	fmt.Println(getInterfaceByMac(clientConfig, "10.1.0.29:22", "b79e"))
+	inter := getInterfaceByMac(clientConfig, "10.1.0.29:22", "b79e")
+	desc := getDescriptionOfInterface(clientConfig, "10.1.0.29:22", inter)
+	fmt.Println(desc)
+}
 
+func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) string {
+	conn, err := ssh.Dial("tcp", host, config)
+	if err != nil {
+		log.Fatal("unable to connect: ", err)
+	}
+	defer conn.Close()
+
+	session, err := conn.NewSession()
+	if err != nil {
+		log.Fatal("failed to create session: ", err)
+	}
+	defer session.Close()
+
+	b, err := session.Output("show interfaces description | include " + inter)
+	if err != nil {
+		log.Fatal("failed to run: ", err)
+	}
+
+	slices := strings.Fields(string(b))
+	if len(slices) != 4 {
+		log.Fatalln("description is empty")
+	}
+
+	return strings.Fields(string(b))[3]
 }
 
 func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
