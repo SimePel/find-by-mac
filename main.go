@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"golang.org/x/crypto/ssh"
 )
@@ -32,11 +33,27 @@ func main() {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	conn, err := ssh.Dial("tcp", "10.1.0.29:22", clientConfig)
+	fmt.Println(getInterfaceByMac(clientConfig, "10.1.0.29:22", "b79e"))
+
+}
+
+func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
+	conn, err := ssh.Dial("tcp", host, config)
 	if err != nil {
 		log.Fatal("unable to connect: ", err)
 	}
 	defer conn.Close()
 
-	fmt.Printf("Connection was established\n")
+	session, err := conn.NewSession()
+	if err != nil {
+		log.Fatal("failed to create session: ", err)
+	}
+	defer session.Close()
+
+	b, err := session.Output("show mac address-table | include ." + mac)
+	if err != nil {
+		log.Fatal("failed to run: ", err)
+	}
+
+	return strings.Fields(string(b))[3]
 }
