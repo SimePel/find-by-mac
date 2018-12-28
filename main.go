@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -10,9 +11,14 @@ import (
 )
 
 var (
+	mac      string
 	login    = os.Getenv("CISCO_LOGIN")
 	password = os.Getenv("CISCO_PASS")
 )
+
+func init() {
+	flag.StringVar(&mac, "mac", "b79e", "enter your searching mac address")
+}
 
 func newConfigWithInsecureCiphers() (c ssh.Config) {
 	c.SetDefaults()
@@ -30,12 +36,13 @@ func main() {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
+	flag.Parse()
 	sw := "sw-102-0-mc.noc.asu.ru:22"
-	inter := getInterfaceByMac(clientConfig, sw, "b79e")
+	inter := getInterfaceByMac(clientConfig, sw, mac)
 	desc := getDescriptionOfInterface(clientConfig, sw, inter)
 	for checkIfDescriptionIsASwitch(desc) {
 		sw = changeSwitchDescToAppropriateName(desc)
-		inter = getInterfaceByMac(clientConfig, sw, "b79e")
+		inter = getInterfaceByMac(clientConfig, sw, mac)
 		desc = getDescriptionOfInterface(clientConfig, sw, inter)
 	}
 
