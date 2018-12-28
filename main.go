@@ -9,11 +9,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const (
-	login = "localadmin"
-)
-
 var (
+	login    = os.Getenv("CISCO_LOGIN")
 	password = os.Getenv("CISCO_PASS")
 )
 
