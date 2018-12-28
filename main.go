@@ -33,15 +33,16 @@ func main() {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	inter := getInterfaceByMac(clientConfig, "10.1.0.29:22", "b79e")
-	desc := getDescriptionOfInterface(clientConfig, "10.1.0.29:22", inter)
+	sw := "sw-102-0-mc.noc.asu.ru:22"
+	inter := getInterfaceByMac(clientConfig, sw, "b79e")
+	desc := getDescriptionOfInterface(clientConfig, sw, inter)
 	for checkIfDescriptionIsASwitch(desc) {
-		sw := changeSwitchDescToAppropriateName(desc)
+		sw = changeSwitchDescToAppropriateName(desc)
 		inter = getInterfaceByMac(clientConfig, sw, "b79e")
 		desc = getDescriptionOfInterface(clientConfig, sw, inter)
 	}
 
-	fmt.Println(desc)
+	fmt.Printf("Мак на: %v воткнут в %v порт\n", sw, inter)
 }
 
 func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) string {
@@ -62,13 +63,15 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 		log.Fatal("failed to run: ", err)
 	}
 
-	slices := strings.Fields(string(b))
+	nedeed := strings.Split(string(b), "\n")
+	slices := strings.Fields(nedeed[len(nedeed)-2])
+
 	if len(slices) < 4 {
 		log.Println("description is empty")
 		return ""
 	}
 
-	return strings.Join(strings.Fields(string(b))[3:], "")
+	return slices[3]
 }
 
 func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
@@ -89,11 +92,12 @@ func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
 		log.Fatal("failed to run: ", err)
 	}
 
-	return strings.Fields(string(b))[3]
+	nedeed := strings.Split(string(b), "\n")
+	return strings.Fields(nedeed[len(nedeed)-2])[3]
 }
 
 func checkIfDescriptionIsASwitch(desc string) bool {
-	return strings.HasPrefix(desc, "sw-")
+	return strings.Contains(desc, "sw-")
 }
 
 func changeSwitchDescToAppropriateName(desc string) string {
