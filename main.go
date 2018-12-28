@@ -42,6 +42,28 @@ func main() {
 	fmt.Printf("Мак на: %v воткнут в %v порт\n", sw, inter)
 }
 
+func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
+	conn, err := ssh.Dial("tcp", host, config)
+	if err != nil {
+		log.Fatal("unable to connect: ", err)
+	}
+	defer conn.Close()
+
+	session, err := conn.NewSession()
+	if err != nil {
+		log.Fatal("failed to create session: ", err)
+	}
+	defer session.Close()
+
+	b, err := session.Output("show mac address-table | include ." + mac)
+	if err != nil {
+		log.Fatal("failed to run: ", err)
+	}
+
+	nedeed := strings.Split(string(b), "\n")
+	return strings.Fields(nedeed[len(nedeed)-2])[3]
+}
+
 func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) string {
 	conn, err := ssh.Dial("tcp", host, config)
 	if err != nil {
@@ -69,28 +91,6 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 	}
 
 	return slices[3]
-}
-
-func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
-	conn, err := ssh.Dial("tcp", host, config)
-	if err != nil {
-		log.Fatal("unable to connect: ", err)
-	}
-	defer conn.Close()
-
-	session, err := conn.NewSession()
-	if err != nil {
-		log.Fatal("failed to create session: ", err)
-	}
-	defer session.Close()
-
-	b, err := session.Output("show mac address-table | include ." + mac)
-	if err != nil {
-		log.Fatal("failed to run: ", err)
-	}
-
-	nedeed := strings.Split(string(b), "\n")
-	return strings.Fields(nedeed[len(nedeed)-2])[3]
 }
 
 func checkIfDescriptionIsASwitch(desc string) bool {
