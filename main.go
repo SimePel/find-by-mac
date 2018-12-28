@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
+const rootSW = "sw-102-0-mc.noc.asu.ru:22"
+
 var (
 	mac      string
 	login    = os.Getenv("CISCO_LOGIN")
@@ -37,7 +39,7 @@ func main() {
 	}
 
 	flag.Parse()
-	sw := "sw-102-0-mc.noc.asu.ru:22"
+	sw := rootSW
 	inter := getInterfaceByMac(clientConfig, sw, mac)
 	desc := getDescriptionOfInterface(clientConfig, sw, inter)
 	for checkIfDescriptionIsASwitch(desc) {
