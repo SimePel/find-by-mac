@@ -45,21 +45,29 @@ func main() {
 
 	flag.Parse()
 	sw += swPostfix
-	inter := getInterfaceByMac(clientConfig, sw, mac)
+	inter, err := getInterfaceByMac(clientConfig, sw, mac)
+	if err != nil {
+		fmt.Printf("Мак на: %v, который не поддерживает ssh\n", sw)
+		return
+	}
 	desc := getDescriptionOfInterface(clientConfig, sw, inter)
 	for checkIfDescriptionIsASwitch(desc) {
 		sw = changeSwitchDescToAppropriateName(desc)
-		inter = getInterfaceByMac(clientConfig, sw, mac)
+		inter, err = getInterfaceByMac(clientConfig, sw, mac)
+		if err != nil {
+			fmt.Printf("Мак на: %v, который не поддерживает ssh\n", sw)
+			return
+		}
 		desc = getDescriptionOfInterface(clientConfig, sw, inter)
 	}
 
 	fmt.Printf("Мак на: %v воткнут в %v порт\n", sw, inter)
 }
 
-func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
+func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) (string, error) {
 	conn, err := ssh.Dial("tcp", host, config)
 	if err != nil {
-		log.Fatal("unable to connect: ", err)
+		return "", err
 	}
 	defer conn.Close()
 
@@ -75,7 +83,7 @@ func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
 	}
 
 	lines := strings.Split(string(b), "\n")
-	return strings.Fields(lines[len(lines)-2])[3]
+	return strings.Fields(lines[len(lines)-2])[3], nil
 }
 
 func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) string {
