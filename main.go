@@ -10,16 +10,18 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const rootSW = "sw-102-0-mc.noc.asu.ru:22"
+const rootSW = "sw-102-0-mc"
 
 var (
 	mac      string
+	sw       string
 	login    = os.Getenv("CISCO_LOGIN")
 	password = os.Getenv("CISCO_PASS")
 )
 
 func init() {
 	flag.StringVar(&mac, "mac", "b79e", "enter your searching mac address")
+	flag.StringVar(&sw, "sw", rootSW, "enter nearest switch as you think")
 }
 
 func newConfigWithInsecureCiphers() (c ssh.Config) {
@@ -39,7 +41,7 @@ func main() {
 	}
 
 	flag.Parse()
-	sw := rootSW
+	sw += ".noc.asu.ru:22"
 	inter := getInterfaceByMac(clientConfig, sw, mac)
 	desc := getDescriptionOfInterface(clientConfig, sw, inter)
 	for checkIfDescriptionIsASwitch(desc) {
