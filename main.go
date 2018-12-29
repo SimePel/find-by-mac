@@ -97,14 +97,15 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 	}
 
 	lines := strings.Split(string(b), "\n")
-	fields := strings.Fields(lines[len(lines)-2])
+	lastLine := strings.Fields(lines[len(lines)-2])
+	desc := lastLine[3:len(lastLine)]
 
-	if len(fields) < 4 {
+	if len(desc) == 0 {
 		log.Println("description is empty")
 		return ""
 	}
 
-	return fields[3]
+	return strings.Join(desc, "")
 }
 
 func checkIfDescriptionIsASwitch(desc string) bool {
