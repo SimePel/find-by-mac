@@ -10,7 +10,10 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-const rootSW = "sw-102-0-mc"
+const (
+	rootSW    = "sw-102-0-mc"
+	swPostfix = ".noc.asu.ru:22"
+)
 
 var (
 	mac      string
@@ -41,7 +44,7 @@ func main() {
 	}
 
 	flag.Parse()
-	sw += ".noc.asu.ru:22"
+	sw += swPostfix
 	inter := getInterfaceByMac(clientConfig, sw, mac)
 	desc := getDescriptionOfInterface(clientConfig, sw, inter)
 	for checkIfDescriptionIsASwitch(desc) {
@@ -71,8 +74,8 @@ func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
 		log.Fatal("failed to run: ", err)
 	}
 
-	nedeed := strings.Split(string(b), "\n")
-	return strings.Fields(nedeed[len(nedeed)-2])[3]
+	lines := strings.Split(string(b), "\n")
+	return strings.Fields(lines[len(lines)-2])[3]
 }
 
 func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) string {
@@ -93,15 +96,15 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 		log.Fatal("failed to run: ", err)
 	}
 
-	nedeed := strings.Split(string(b), "\n")
-	slices := strings.Fields(nedeed[len(nedeed)-2])
+	lines := strings.Split(string(b), "\n")
+	fields := strings.Fields(lines[len(lines)-2])
 
-	if len(slices) < 4 {
+	if len(fields) < 4 {
 		log.Println("description is empty")
 		return ""
 	}
 
-	return slices[3]
+	return fields[3]
 }
 
 func checkIfDescriptionIsASwitch(desc string) bool {
@@ -111,5 +114,5 @@ func checkIfDescriptionIsASwitch(desc string) bool {
 func changeSwitchDescToAppropriateName(desc string) string {
 	beginning := strings.Index(desc, "sw-")
 	ending := strings.LastIndex(desc, "c")
-	return desc[beginning:ending+1] + ".noc.asu.ru:22"
+	return desc[beginning:ending+1] + swPostfix
 }
