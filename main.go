@@ -61,7 +61,7 @@ func main() {
 		desc = getDescriptionOfInterface(clientConfig, sw, inter)
 	}
 
-	fmt.Printf("Мак на: %v воткнут в %v порт\n", sw, inter)
+	fmt.Printf("Мак на: %v воткнут в %v порт. Описание порта: %v\n", sw, inter, desc)
 }
 
 func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) (string, error) {
