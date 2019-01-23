@@ -77,6 +77,11 @@ func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
 		log.Fatal("failed to run: ", err)
 	}
 
+	if !strings.Contains(string(b), mac) {
+		fmt.Println("Этот мак адрес не удалось найти.")
+		os.Exit(0)
+	}
+
 	lines := strings.Split(string(b), "\n")
 	return strings.Fields(lines[len(lines)-2])[3]
 }
