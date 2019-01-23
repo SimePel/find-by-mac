@@ -109,7 +109,8 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 	desc := lastLine[3:len(lastLine)]
 
 	if len(desc) == 0 {
-		log.Fatal("description is empty")
+		fmt.Printf("Мак на: %v воткнут в %v порт, но описание отсутствует.\n", host, inter)
+		os.Exit(0)
 	}
 
 	return strings.Join(desc, "")
