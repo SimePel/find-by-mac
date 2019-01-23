@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"strings"
 
@@ -11,20 +12,18 @@ import (
 )
 
 const (
-	rootSW    = "sw-102-0-mc"
-	swPostfix = ".noc.asu.ru:22"
+	domain     = ".noc.asu.ru"
+	rootSwitch = "sw-102-0-mc"
 )
 
 var (
-	mac      string
-	sw       string
-	login    = os.Getenv("CISCO_LOGIN")
-	password = os.Getenv("CISCO_PASS")
+	sw  string
+	mac string
 )
 
 func init() {
 	flag.StringVar(&mac, "mac", "b79e", "enter your searching mac address")
-	flag.StringVar(&sw, "sw", rootSW, "enter nearest switch as you think")
+	flag.StringVar(&sw, "sw", rootSwitch, "enter nearest switch as you think")
 }
 
 func newConfigWithInsecureCiphers() (c ssh.Config) {
@@ -36,38 +35,34 @@ func newConfigWithInsecureCiphers() (c ssh.Config) {
 func main() {
 	clientConfig := &ssh.ClientConfig{
 		Config: newConfigWithInsecureCiphers(),
-		User:   login,
+		User:   os.Getenv("CISCO_LOGIN"),
 		Auth: []ssh.AuthMethod{
-			ssh.Password(password),
+			ssh.Password(os.Getenv("CISCO_PASS")),
 		},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
 	flag.Parse()
-	sw += swPostfix
-	inter, err := getInterfaceByMac(clientConfig, sw, mac)
-	if err != nil {
-		fmt.Printf("Мак на: %v, который не поддерживает ssh\n", sw)
-		return
-	}
+	sw += domain
+	inter := getInterfaceByMac(clientConfig, sw, mac)
 	desc := getDescriptionOfInterface(clientConfig, sw, inter)
-	for checkIfDescriptionIsASwitch(desc) {
+	for descriptionIsASwitch(desc) {
 		sw = changeSwitchDescToAppropriateName(desc)
-		inter, err = getInterfaceByMac(clientConfig, sw, mac)
-		if err != nil {
+		if httpConnectionIsAvailable(sw) {
 			fmt.Printf("Мак на: %v, который не поддерживает ssh\n", sw)
 			return
 		}
+		inter = getInterfaceByMac(clientConfig, sw, mac)
 		desc = getDescriptionOfInterface(clientConfig, sw, inter)
 	}
 
 	fmt.Printf("Мак на: %v воткнут в %v порт. Описание порта: %v\n", sw, inter, desc)
 }
 
-func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) (string, error) {
-	conn, err := ssh.Dial("tcp", host, config)
+func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) string {
+	conn, err := ssh.Dial("tcp", host+":22", config)
 	if err != nil {
-		return "", err
+		log.Fatal("failed to connect by ssh: ", err)
 	}
 	defer conn.Close()
 
@@ -83,13 +78,13 @@ func getInterfaceByMac(config *ssh.ClientConfig, host, mac string) (string, erro
 	}
 
 	lines := strings.Split(string(b), "\n")
-	return strings.Fields(lines[len(lines)-2])[3], nil
+	return strings.Fields(lines[len(lines)-2])[3]
 }
 
 func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) string {
-	conn, err := ssh.Dial("tcp", host, config)
+	conn, err := ssh.Dial("tcp", host+":22", config)
 	if err != nil {
-		log.Fatal("unable to connect: ", err)
+		log.Fatal("failed to connect by ssh: ", err)
 	}
 	defer conn.Close()
 
@@ -109,19 +104,30 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 	desc := lastLine[3:len(lastLine)]
 
 	if len(desc) == 0 {
-		log.Println("description is empty")
-		return ""
+		log.Fatal("description is empty")
 	}
 
 	return strings.Join(desc, "")
 }
 
-func checkIfDescriptionIsASwitch(desc string) bool {
+func httpConnectionIsAvailable(host string) bool {
+	resp, err := http.Get("http://" + host)
+	if err != nil {
+		return false
+	}
+	if resp.StatusCode == http.StatusOK {
+		return true
+	}
+	log.Printf("Однако не 200 код\n")
+	return false
+}
+
+func descriptionIsASwitch(desc string) bool {
 	return strings.Contains(desc, "sw-")
 }
 
 func changeSwitchDescToAppropriateName(desc string) string {
 	beginning := strings.Index(desc, "sw-")
 	ending := strings.LastIndex(desc, "c")
-	return desc[beginning:ending+1] + swPostfix
+	return desc[beginning:ending+1] + domain
 }
