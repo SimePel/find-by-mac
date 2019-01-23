@@ -124,7 +124,6 @@ func httpConnectionIsAvailable(host string) bool {
 	if resp.StatusCode == http.StatusOK {
 		return true
 	}
-	log.Printf("Однако не 200 код\n")
 	return false
 }
 
