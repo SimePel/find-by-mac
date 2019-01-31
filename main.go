@@ -104,16 +104,16 @@ func getDescriptionOfInterface(config *ssh.ClientConfig, host, inter string) str
 		log.Fatal("failed to run: ", err)
 	}
 
-	lines := strings.Split(string(b), "\n")
-	lastLine := strings.Fields(lines[len(lines)-2])
-	desc := lastLine[3:len(lastLine)]
+	lastUP := strings.LastIndex(string(b), " up ")
+	tail := string(b[lastUP+4 : len(b)])
+	desc := strings.Trim(tail, " ")
 
-	if len(desc) == 0 {
+	if desc == "" {
 		fmt.Printf("Мак на: %v воткнут в %v порт, но описание отсутствует.\n", host, inter)
 		os.Exit(0)
 	}
 
-	return strings.Join(desc, "")
+	return desc
 }
 
 func httpConnectionIsAvailable(host string) bool {
